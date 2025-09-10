@@ -1,0 +1,10 @@
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/CMakeFiles/intrinsics_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/CMakeFiles/vt_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/CMakeFiles/omp_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/CMakeFiles/acc_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/CMakeFiles/target_parser_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/CMakeFiles/edit_cache.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/CMakeFiles/rebuild_cache.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/src/CMakeFiles/calc.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/src/CMakeFiles/edit_cache.dir
+/home/nm/Study/compilers/compilers-fall-lec1/07-calc/build/src/CMakeFiles/rebuild_cache.dir
