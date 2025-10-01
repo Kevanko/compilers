@@ -43,7 +43,6 @@ public:
     if (Node.getOperator() == BinaryOp::Div) {
         Expr *Right = Node.getRight();
         if (Right) {
-            // Попытка приведения без RTTI — через простой указатель
             Factor *F = static_cast<Factor*>(Right);
             if (F && F->getKind() == Factor::Number) {
                 double Val = std::stod(F->getVal().str());

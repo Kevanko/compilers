@@ -1,0 +1,122 @@
+Сборка и запуск
+===============
+* Собрать проект, запустить для примера gcd.mod
+
+Проверки типов данных
+=====================
+* Написать тестовую программу, в которой выполняется сложение числа и строки.
+* Объяснить как семантический анализатор хранит и анализирует информацию о типе выражений
+* Написать пример с циклом while, в котором условие цикла имеет тип INTEGER
+* Где регестрируются типы данных INTEGER, BOOLEAN?
+
+Проверки контекста использования языковых конструкций
+=====================================================
+* Написать процедуру и вызвать в ней RETURN 10
+* Объяснить как и где выполняется проверка
+
+Области видимости (scope)
+=========================
+* Написать тестовую программу на Modula-2, в которой две переменные имеют одинаковые имена,
+  но в разных областях видимости (scope).
+* Объяснить как осуществляется поиск имени в списке обласетй (scope->parent). Показать в коде
+* Написать тестовую программу на Modula-2 с функцией, среди формальных параметров которой имеются одинаковые имена.
+  Как хранятся имена переменных?
+
+* Где определены диагностические сообщения?
+* Поддерживает ли компилятор логические литералы типа BOOLEAN?
+
+
+tinylang/
+├── include/          ← заголовочные файлы (объявления классов AST, анализаторов)
+├── lib/              ← реализация лексера, парсера, семантического анализа
+│   ├── Lexer/        ← лексический анализатор
+│   ├── Parser/       ← синтаксический анализатор (рекурсивный спуск)
+│   └── Semantic/     ← семантический анализатор, символические таблицы
+├── tools/
+│   └── driver/       ← main(), запуск компиляции
+└── examples/         ← тесты
+
+1. Встроенные типы (INTEGER, BOOLEAN)
+Где регистрируются: при инициализации семантического анализатора.
+Файл: lib/Semantic/SymbolTable.cpp или lib/Semantic/TypeChecker.cpp
+Строка: ищите инициализацию глобальной таблицы,
+// SymbolTable.cpp
+SymbolTable::SymbolTable() {
+    // Predefined types
+    addType("INTEGER", new IntegerType());
+    addType("BOOLEAN", new BooleanType());
+    // ... возможно CARDINAL, REAL и др.
+}
+2. Семантический анализатор: проверка типов выражений
+Файл: lib/Semantic/TypeChecker.cpp
+Метод: visit(BinaryExpr*), visit(WhileStmt*), visit(AssignStmt*)
+Пример (проверка условия в WHILE)
+
+void TypeChecker::visit(WhileStmt* stmt) {
+    stmt->getCondition()->accept(this);
+    if (currentType != booleanType) {
+        error("expression of IF statement must have type BOOLEAN", stmt->getLocation());
+    }
+    stmt->getBody()->accept(this);
+}
+
+3. Проверка RETURN в процедуре
+Файл: lib/Semantic/TypeChecker.cpp
+Метод: visit(ReturnStmt*)
+
+void TypeChecker::visit(ReturnStmt* stmt) {
+    if (currentFunction->getReturnType() == nullptr) {
+        // Это PROCEDURE (не функция)
+        if (stmt->getExpression() != nullptr) {
+            error("Procedure does not allow RETURN with value", stmt->getLocation());
+        }
+    } else {
+        // Это FUNCTION — проверяем тип выражения
+        // ...
+    }
+}
+
+4. Области видимости (scope) и символические таблицы
+class SymbolTable {
+    SymbolTable* parent; // ← цепочка scope->parent
+    std::map<std::string, Decl*> symbols;
+public:
+    bool insert(const std::string& name, Decl* decl) {
+        if (symbols.count(name)) return false; // дубликат!
+        symbols[name] = decl;
+        return true;
+    }
+    Decl* lookup(const std::string& name) {
+        if (symbols.count(name)) return symbols[name];
+        if (parent) return parent->lookup(name); // ← рекурсивный поиск вверх
+        return nullptr;
+    }
+};
+При входе в MODULE → создаётся глобальная таблица.
+При входе в PROCEDURE → создаётся дочерняя таблица с parent = текущая
+
+5. Диагностические сообщения (ошибки)
+Файл: lib/Semantic/Diagnostic.cpp или include/tinylang/Diagnostic.h
+Функция: error(const std::string& msg, Location loc)
+Пример сообщений:
+cpp
+"Procedure does not allow RETURN with value"
+"symbol %s already declared"
+"expression of IF statement must have type BOOLEAN"
+
+
+6. Поддержка TRUE / FALSE
+Лексер: распознаёт TRUE и FALSE как ключевые слова → токены tok_true, tok_false.
+Файл: lib/Lexer/Lexer.cpp
+Парсер: создаёт узел BooleanLiteral(true/false).
+Семантический анализатор: присваивает тип BOOLEAN.
+Если BooleanLiterals.mod компилируется — значит, всё это реализовано.
+
+7. Где обрабатываются импорты (FROM ... IMPORT)
+Файл: lib/Parser/Parser.cpp → метод parseImport()
+Ваша ошибка: <unknown>:0: error: module imports are not yet implemented
+Причина: в Parser.cpp или Semantic/SymbolTable.cpp есть заглушка:
+void Parser::parseImport() {
+    // TODO: implement imports
+    error("module imports are not yet implemented");
+}

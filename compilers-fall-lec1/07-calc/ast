@@ -1,0 +1,7 @@
+WithDecl
+├── переменные: [x]
+└── выражение: BinaryOp(-)
+     ├── левый: Factor(1)
+     └── правый: BinaryOp(*)
+          ├── левый: Factor(2)
+          └── правый: Factor(x)
