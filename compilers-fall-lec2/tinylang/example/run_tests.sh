@@ -1,23 +1,21 @@
 #!/bin/bash
 
 if [ ! -f ./tinylang ]; then
-    echo "❌ Не найден ./tinylang"
+    echo "Не найден ./tinylang"
     exit 1
 fi
-
-echo "🧪 Тесты для TinyLang (минималистичные, без импортов)"
 
 run_test() {
     local file="$1"
     local desc="$2"
     echo
     echo "──────────────────────────────────────"
-    echo "📄 $desc"
-    echo "⚙️  $file"
+    echo "$desc"
+    echo "$file"
     if ./tinylang "$file" 2>&1; then
-        echo "✅ УСПЕХ"
+        echo 
     else
-        echo "❌ ОШИБКА (ожидаемо)"
+        echo 
     fi
 }
 

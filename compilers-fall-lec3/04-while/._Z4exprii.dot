@@ -1,0 +1,12 @@
+digraph "CFG for '_Z4exprii' function" {
+	label="CFG for '_Z4exprii' function";
+
+	Node0x60e7b37ef2c0 [shape=record,color="#3d50c3ff", style=filled, fillcolor="#d6524470" fontname="Courier",label="{2:\l|  %3 = alloca i32, align 4\l  %4 = alloca i32, align 4\l  %5 = alloca i32, align 4\l  %6 = alloca i32, align 4\l  store i32 %0, ptr %3, align 4\l  store i32 %1, ptr %4, align 4\l  store i32 0, ptr %5, align 4\l  %7 = load i32, ptr %3, align 4\l  store i32 %7, ptr %6, align 4\l  br label %8\l}"];
+	Node0x60e7b37ef2c0 -> Node0x60e7b37f19f0;
+	Node0x60e7b37f19f0 [shape=record,color="#b70d28ff", style=filled, fillcolor="#b70d2870" fontname="Courier",label="{8:\l|  %9 = load i32, ptr %6, align 4\l  %10 = load i32, ptr %4, align 4\l  %11 = icmp slt i32 %9, %10\l  br i1 %11, label %12, label %18\l|{<s0>T|<s1>F}}"];
+	Node0x60e7b37f19f0:s0 -> Node0x60e7b37f1bc0;
+	Node0x60e7b37f19f0:s1 -> Node0x60e7b37f1c20;
+	Node0x60e7b37f1bc0 [shape=record,color="#b70d28ff", style=filled, fillcolor="#b70d2870" fontname="Courier",label="{12:\l|  %13 = load i32, ptr %5, align 4\l  %14 = load i32, ptr %6, align 4\l  %15 = add nsw i32 %13, %14\l  store i32 %15, ptr %5, align 4\l  %16 = load i32, ptr %6, align 4\l  %17 = add nsw i32 %16, 1\l  store i32 %17, ptr %6, align 4\l  br label %8, !llvm.loop !6\l}"];
+	Node0x60e7b37f1bc0 -> Node0x60e7b37f19f0;
+	Node0x60e7b37f1c20 [shape=record,color="#3d50c3ff", style=filled, fillcolor="#d6524470" fontname="Courier",label="{18:\l|  %19 = load i32, ptr %5, align 4\l  ret i32 %19\l}"];
+}
