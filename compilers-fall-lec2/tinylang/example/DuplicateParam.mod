@@ -1,0 +1,7 @@
+MODULE DuplicateParam;
+PROCEDURE F(a : INTEGER; a : INTEGER) : INTEGER;
+BEGIN
+    RETURN 0;
+END F;
+BEGIN
+END DuplicateParam.
