@@ -1,0 +1,1 @@
+../tinylang-build/tools/driver/tinylang bool_test.mod -emit-llvm -o bool_test.ll

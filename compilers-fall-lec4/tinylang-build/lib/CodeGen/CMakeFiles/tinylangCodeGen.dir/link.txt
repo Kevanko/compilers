@@ -1,0 +1,2 @@
+/usr/bin/ar Dqc libtinylangCodeGen.a CMakeFiles/tinylangCodeGen.dir/CGModule.cpp.o CMakeFiles/tinylangCodeGen.dir/CGProcedure.cpp.o CMakeFiles/tinylangCodeGen.dir/CodeGenerator.cpp.o
+/usr/bin/ranlib -D libtinylangCodeGen.a

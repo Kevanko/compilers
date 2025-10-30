@@ -1,0 +1,4 @@
+MODULE example;
+
+END example.
+
