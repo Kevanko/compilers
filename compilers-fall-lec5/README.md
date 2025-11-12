@@ -1,56 +1,55 @@
-Lab 5: Arrays and Records in TinyLang → LLVM IR
-================================================
+# Лабораторная работа №5: Трансляция массивов и записей в LLVM IR
 
-Цель: исследовать, как TinyLang обрабатывает массивы и записи (struct), сравнить с C/Clang.
+## Содержание
+1. [Введение](#введение)
+2. [Подготовка окружения](#подготовка-окружения)
+3. [Тест 1: Массивы в TinyLang](#тест-1-массивы-в-tinylang)
+4. [Тест 2: Записи (RECORD) в TinyLang](#тест-2-записи-record-в-tinylang)
+5. [Тест 3: Структуры в C/Clang](#тест-3-структуры-в-cclang)
+6. [Тест 4: Константные выражения в определении массивов](#тест-4-константные-выражения-в-определении-массивов)
+7. [Итоговые выводы](#итоговые-выводы)
 
-Необходимо:
-- собрать компилятор,
-- создать тестовые модули на Modula-2 и C,
-- сгенерировать LLVM IR,
-- ответить на вопросы по реализации и выравниванию.
+## Введение
 
----
+**Цель работы**: исследовать трансляцию конструкций работы с массивами и записями (struct) из Modula-2 в LLVM IR, сравнить поведение TinyLang и Clang при генерации кода для составных типов.
 
-Шаг 1. Сборка проекта TinyLang
+## Подготовка окружения
 
-# Перейти в директорию с исходниками
-cd tinylang
+### Шаг 1. Сборка проекта TinyLang
 
-# Создать и зайти в build-директорию
+```bash
+cd ~/Study/compilers/compilers-fall-lec5/tinylang
 mkdir -p build
 cd build
-
-# Настроить сборку (используется системный LLVM)
 cmake ..
-
-# Собрать (параллельно)
 make -j$(nproc)
+```
 
-# Вернуться в корень лабы
-cd ../..
+**Примечание:**
+Основные компоненты компилятора:
+- **Парсер**: `tinylang/lib/Parser/Parser.cpp` (строки 208-232 для ARRAY/RECORD)
+- **Семантический анализатор**: `tinylang/lib/Sema/Sema.cpp` (строки 137-206 для типов)
+- **Генератор кода**: `tinylang/lib/CodeGen/CGModule.cpp` (строки 52-79 для преобразования типов)
 
-> Успешная сборка даёт исполняемый файл:
->   tinylang/build/tools/driver/tinylang
+### Шаг 2. Проверка сборки
 
----
-
-Шаг 2. Проверка работы компилятора
-
+```bash
+cd ~/Study/compilers/compilers-fall-lec5
 tinylang/build/tools/driver/tinylang --version
+```
 
-Ожидаемый вывод (пример):
-  tinylang - Tinylang compiler 0.1
+**Ожидаемый результат:**
+tinylang - Tinylang compiler 0.1
   Default target: x86_64-unknown-linux-gnu
   Host CPU: znver3
 
-Если команда не найдена — проверь путь: бинарник именно в `.../driver/tinylang`.
+## Тест 1: Массивы в TinyLang
 
----
+### Шаг 3. Создание теста для массива
 
-Шаг 3. Тест 1: массив ARRAY [10] OF INTEGER
+Создайте файл `array10.mod` с содержимым:
 
-Создай файл `array10.mod` со следующим содержимым:
-
+```modula2
 MODULE ExampleMod;
 TYPE MyArray = ARRAY [10] OF INTEGER;
 VAR v: MyArray;
@@ -59,33 +58,38 @@ BEGIN
   v[2] := 100;
 END Main;
 END ExampleMod.
+```
 
-> Важно: размер именно `10`, а не `10 + 2`. Иначе будет ошибка (см. Шаг 6).
+**Важно:** Используется строго `[10]`, а не выражение, так как генератор кода не поддерживает вычисление константных выражений (см. CGModule.cpp, строки 57-61: `assert(llvm::cast<IntegerLiteral>(Nums) && "Expected an integer literal");`).
 
-Скомпилируй и сохрани LLVM IR:
+### Шаг 4. Генерация LLVM IR
 
+```bash
 tinylang/build/tools/driver/tinylang array10.mod --emit-llvm > array10.ll
-
-Посмотри результат:
-
 cat array10.ll
+```
 
-Ожидаемое (фрагмент):
-  @_t10ExampleMod1v = private global [10 x i64]
-  ...
-  store i64 100, ptr getelementptr inbounds ([10 x i64], ptr @_t10ExampleMod1v, i32 0, i64 2)
+**Ожидаемый результат (фрагмент):**
+@_t10ExampleMod1v = private global [10 x i64]
+define void @_t10ExampleMod4Main() {
+entry:
+  store i64 100, ptr getelementptr inbounds ([10 x i64], ptr @_t10ExampleMod1v, i32 0, i64 2), align 8
+  ret void
+}
 
-Что происходит:
-- `MyArray` → `[10 x i64]` (строка 55 в `tinylang/lib/CodeGen/CGModule.cpp`)
-- `v[2] := 100` → `getelementptr inbounds` + `store` (строки 420–440 в `CGProcedure.cpp`)
-- Базовых блоков в процедуре Main — 1 (`entry`)
+**Анализ результата:**
+- Тип MyArray транслируется в LLVM-тип `[10 x i64]` (строки 52-68 в CGModule.cpp)
+- Доступ к элементу массива реализован через инструкцию `getelementptr inbounds`
+- В процедуре Main создано 1 базовых блока (entry)
+- Массив объявлен как глобальная переменная с типом `[10 x i64]` и инициализирован нулями (по умолчанию)
 
----
+## Тест 2: Записи (RECORD) в TinyLang
 
-Шаг 4. Тест 2: запись RECORD (Cursor)
+### Шаг 5. Создание теста для записи
 
-Создай файл `cursor.mod`:
+Создайте файл `cursor.mod` с содержимым:
 
+```modula2
 MODULE RecEx;
 TYPE Cursor = RECORD
   visible: BOOLEAN;
@@ -99,124 +103,136 @@ BEGIN
   c.y := 100;
 END SetCenter;
 END RecEx.
+```
 
-Скомпилируй:
+### Шаг 6. Генерация LLVM IR
 
+```bash
 tinylang/build/tools/driver/tinylang cursor.mod --emit-llvm > cursor.ll
-
-Посмотри результат:
-
 cat cursor.ll
+```
 
-Ожидаемое (фрагмент):
-  %Cursor = type { i1, i64, i64 }
-  @_t5RecEx1c = private global %Cursor
+**Ожидаемый результат (фрагмент):**
+%Cursor = type { i1, i64, i64 }
+@_t5RecEx1c = private global %Cursor
+define void @_t5RecEx9SetCenter() {
+entry:
   store i1 true, ptr @_t5RecEx1c, align 1
   store i64 100, ptr getelementptr inbounds (%Cursor, ptr @_t5RecEx1c, i32 0, i32 1), align 8
+  store i64 100, ptr getelementptr inbounds (%Cursor, ptr @_t5RecEx1c, i32 0, i32 2), align 8
+  ret void
+}
 
-Что происходит:
-- Разбор RECORD — `Parser.cpp`, строки 222–232 (tok::kw_RECORD)
-- Генерация типа — `CGModule.cpp`, строки 69–79:
-      llvm::StructType::create(Elements, Name, /*isPacked=*/false);
-- Поля: `visible` → i1, `x`/`y` → i64
-- Индексы в getelementptr: 0 → visible, 1 → x, 2 → y
-- Паддинг (выравнивание) НЕ добавляется: структура плотная `{ i1, i64, i64 }`
+**Анализ результата:**
+- Разбор конструкции RECORD происходит в Parser.cpp, строки 222-232
+- Генерация LLVM-типа происходит в CGModule.cpp, строки 69-79
+- Тип Cursor транслируется в `%Cursor = type { i1, i64, i64 }`
+- Поля доступны по индексам: 0 → visible, 1 → x, 2 → y
+- **Вывод по выравниванию:** Паддинг (байты выравнивания) после поля visible отсутствует. Структура хранится в плотном формате, что видно по отсутствию дополнительных полей или явного указания выравнивания в определении типа.
 
-> Почему нет паддинга? 
-> TinyLang создаёт non-packed struct (isPacked = false), но для глобальных переменных LLVM не вставляет явные байты выравнивания, если не требуется ABI-совместимость.
+## Тест 3: Структуры в C/Clang
 
----
+### Шаг 7. Создание теста для C-структуры
 
-Шаг 5. Тест 3: C-структура и Clang
+Создайте файл `cstruct.c` с содержимым:
 
-Создай временный файл с C-структурой:
-
-echo '
+```c
 #include <stdint.h>
 struct C {
   uint8_t visible;
   uint64_t x, y;
 };
-int main() { struct C c; c.visible = 1; c.x = 2; return 0; }
-' > cstruct.c
+int main() {
+  struct C c;
+  c.visible = 1;
+  c.x = 2;
+  return 0;
+}
+```
 
-Сгенерируй LLVM IR:
+### Шаг 8. Генерация LLVM IR через Clang
 
-clang -S -emit-llvm -o - cstruct.c | grep -A5 '%struct\.C'
+```bash
+clang -S -emit-llvm -o - cstruct.c | grep -A15 '%struct\.C'
+```
 
-Ожидаемый вывод:
-  %struct.C = type { i8, i64, i64 }
+**Ожидаемый результат:**
+%struct.C = type { i8, i64, i64 }
+...
+%1 = alloca %struct.C, align 8
+...
+%2 = getelementptr inbounds %struct.C, %struct.C* %1, i32 0, i32 0
+store i8 1, i8* %2, align 1
+%3 = getelementptr inbounds %struct.C, %struct.C* %1, i32 0, i32 1
+store i64 2, i64* %3, align 8
 
-Также посмотри весь IR (ищем alloca):
+**Анализ результата:**
+- Clang также не добавляет явные байты выравнивания в определение типа (`%struct.C = type { i8, i64, i64 }`)
+- Однако переменная в стеке имеет атрибут `align 8`, гарантирующий 8-байтовое выравнивание структуры
+- Доступ к полям имеет различные атрибуты выравнивания: `align 1` для visible и `align 8` для x и y
 
-clang -S -emit-llvm -o - cstruct.c | grep -A2 'alloca %struct\.C'
+**Почему нет паддинга?**
+- Современные процессоры x86-64 поддерживают не выровненный доступ к памяти (хотя он менее эффективен)
+- Clang полагается на выравнивание всей структуры (align 8), а не на изменение layout
+- Явный паддинг добавляется только при необходимости строгого соответствия ABI или при использовании `#pragma pack`
 
-Вывод (пример):
-  %1 = alloca %struct.C, align 8
+## Тест 4: Константные выражения в определении массивов
 
-Что происходит:
-- Структура в IR — `{ i8, i64, i64 }` (без явного паддинга)
-- Но переменная в стеке выровнена по 8 байтам: `align 8`
-- Доступ к полям — через `getelementptr ... , align X`, где X зависит от поля:
-      visible — align 1 (i8 не требует выравнивания)
-      x, y   — align 8 (i64 требует 8-байтного выравнивания)
+### Шаг 9. Проверка поддержки выражений в размере массива
 
-> Почему Clang не добавил [7 x i8]?
-> - ABI x86-64 разрешает не выровненный доступ (медленнее, но допустим).
-> - LLVM полагается на выравнивание памяти (`align 8`) и инструкций (offset + align), а не на изменение layout структуры.
-> - Если бы структура передавалась между модулями (библиотеками), или использовалась `#pragma pack(push,1)`, паддинг мог бы появиться.
+Создайте файл `array_expr.mod` с содержимым:
 
----
-
-Шаг 6. Тест 4: выражение в размере массива ([10 + 4])
-
-Создай файл `array_expr.mod`:
-
+```modula2
 MODULE Test;
 TYPE MyArray = ARRAY [10 + 4] OF INTEGER;
 VAR v: MyArray;
 PROCEDURE P; BEGIN END P;
 END Test.
+```
 
-Попробуй скомпилировать:
+### Шаг 10. Попытка компиляции
 
+```bash
 tinylang/build/tools/driver/tinylang array_expr.mod --emit-llvm
+```
 
-→ Ошибка: assertion failed в CGModule.cpp, строка ~61:
-    assert(llvm::cast<IntegerLiteral>(Nums) && "Expected an integer literal");
+**Ожидаемый результат (ошибка):**
+tinylang: /home/user/.../CGModule.cpp:61: 
+assert(llvm::cast<IntegerLiteral>(Nums) && "Expected an integer literal") failed.
 
-Причина:
-- Parser.cpp (строки 213–221): `parseExpression(E)` — позволяет любое выражение.
-- Sema.cpp (строки 137–153): проверяет `E->isConst() && E->getType() == INTEGER` — пропускает `10 + 4`.
-- CGModule.cpp (строка 60): есть TODO: "// TODO Evaluate the constant expression."
-  → Сейчас ожидается только `IntegerLiteral`, но не `InfixExpression`.
+**Анализ причины:**
+- Парсер (Parser.cpp, строки 213-221) успешно разбирает выражения в квадратных скобках
+- Семантический анализатор (Sema.cpp, строки 137-153) проверяет, что выражение константное и имеет тип INTEGER
+- Однако генератор кода (CGModule.cpp, строки 57-61) содержит TODO-комментарий и ожидает только литералы:
 
-Вывод:
-- Парсер и семантика **допускают** выражения вида `10 + 4`.
-- Генератор кода **НЕ поддерживает** их → аварийное завершение.
-- Чтобы заработало — нужно реализовать вычисление константных выражений в `CGModule::convertType`.
+```cpp
+// TODO Evaluate the constant expression.
+assert(llvm::cast<IntegerLiteral>(Nums) && "Expected an integer literal");
+```
 
----
+**Вывод:** Текущая версия TinyLang не поддерживает арифметические выражения в качестве длины массива на этапе генерации кода, несмотря на то, что парсер и семантический анализатор их принимают.
 
-Итоговые ответы по заданию:
+## Итоговые выводы
 
-2. Массив:
-   - Разбор: `Parser.cpp`, строки 213–221 (tok::kw_ARRAY)
-   - Генерация: `CGModule.cpp`, строки 52–68
-   - Базовых блоков в Main: 1 (`entry`)
+### Массивы в TinyLang:
+- Разбор конструкции ARRAY реализован в Parser.cpp, строки 208-221
+- Генерация LLVM-типа массива происходит в CGModule.cpp, строки 52-68
+- Для присваивания элементу массива генерируется 1 базовый блок (entry)
+- Доступ к элементам реализован через инструкцию `getelementptr inbounds`
 
-3. RECORD:
-   - Разбор: `Parser.cpp`, строки 222–232 (tok::kw_RECORD)
-   - Генерация: `CGModule.cpp`, строки 69–79
-   - Паддинг после `visible`? — **НЕТ** (`{ i1, i64, i64 }`)
+### Записи (RECORD) в TinyLang:
+- Разбор конструкции RECORD реализован в Parser.cpp, строки 222-232
+- Генерация LLVM-типа происходит в CGModule.cpp, строки 69-79
+- TinyLang не добавляет байты выравнивания после поля visible (плотная упаковка)
+- Доступ к полям записи осуществляется через индексы в `getelementptr`
 
-4. C-структура в Clang:
-   - Паддинг в IR? — **НЕТ** (`{ i8, i64, i64 }`)
-   - Но переменная выровнена: `alloca ..., align 8`
-   - Причина: x86-64 допускает не выровненный доступ, LLVM использует `align` вместо изменения layout.
+### Сравнение с C/Clang:
+- Clang также не добавляет явный паддинг в определение типа
+- Для обеспечения корректного доступа к полям используются атрибуты выравнивания (align 8)
+- Причина отсутствия явного паддинга: современные процессоры x86-64 допускают не выровненный доступ к памяти, выравнивание обеспечивается на уровне размещения переменных
 
-5. `[10 + 4]`:
-   - Допускается? — **НО**, но только на уровне парсера и семантики.
-   - Генерация кода падает → **фактически НЕ поддерживается**.
-
-Готово.
+### Константные выражения:
+- TinyLang частично поддерживает выражения в размере массива:
+  - Парсер и семантика принимают выражения
+  - Генератор кода требует только целочисленные литералы
+- Для полной поддержки необходимо реализовать вычисление константных выражений в CGModule.cpp
