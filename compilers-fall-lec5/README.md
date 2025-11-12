@@ -38,10 +38,10 @@ cd ~/Study/compilers/compilers-fall-lec5
 tinylang/build/tools/driver/tinylang --version
 ```
 
-**Ожидаемый результат:**
-tinylang - Tinylang compiler 0.1
-  Default target: x86_64-unknown-linux-gnu
-  Host CPU: znver3
+>**Ожидаемый результат:**
+>tinylang - Tinylang compiler 0.1
+>  Default target: x86_64-unknown-linux-gnu
+>  Host CPU: znver3
 
 ## Тест 1: Массивы в TinyLang
 
@@ -60,7 +60,7 @@ END Main;
 END ExampleMod.
 ```
 
-**Важно:** Используется строго `[10]`, а не выражение, так как генератор кода не поддерживает вычисление константных выражений (см. CGModule.cpp, строки 57-61: `assert(llvm::cast<IntegerLiteral>(Nums) && "Expected an integer literal");`).
+>**Важно:** Используется строго `[10]`, а не выражение, так как генератор кода не поддерживает вычисление константных выражений (см. CGModule.cpp, строки 57-61: `assert(llvm::cast<IntegerLiteral>(Nums) && "Expected an integer literal");`).
 
 ### Шаг 4. Генерация LLVM IR
 
@@ -69,13 +69,13 @@ tinylang/build/tools/driver/tinylang array10.mod --emit-llvm > array10.ll
 cat array10.ll
 ```
 
-**Ожидаемый результат (фрагмент):**
-@_t10ExampleMod1v = private global [10 x i64]
-define void @_t10ExampleMod4Main() {
-entry:
-  store i64 100, ptr getelementptr inbounds ([10 x i64], ptr @_t10ExampleMod1v, i32 0, i64 2), align 8
-  ret void
-}
+>**Ожидаемый результат (фрагмент):**
+>@_t10ExampleMod1v = private global [10 x i64]
+>define void @_t10ExampleMod4Main() {
+>entry:
+>  store i64 100, ptr getelementptr inbounds ([10 x i64], ptr @_t10ExampleMod1v, i32 0, i64 2), >align 8
+>  ret void
+>}
 
 **Анализ результата:**
 - Тип MyArray транслируется в LLVM-тип `[10 x i64]` (строки 52-68 в CGModule.cpp)
@@ -156,15 +156,15 @@ int main() {
 clang -S -emit-llvm -o - cstruct.c | grep -A15 '%struct\.C'
 ```
 
-**Ожидаемый результат:**
-%struct.C = type { i8, i64, i64 }
-...
-%1 = alloca %struct.C, align 8
-...
-%2 = getelementptr inbounds %struct.C, %struct.C* %1, i32 0, i32 0
-store i8 1, i8* %2, align 1
-%3 = getelementptr inbounds %struct.C, %struct.C* %1, i32 0, i32 1
-store i64 2, i64* %3, align 8
+>**Ожидаемый результат:**
+>%struct.C = type { i8, i64, i64 }
+>...
+>%1 = alloca %struct.C, align 8
+>...
+>%2 = getelementptr inbounds %struct.C, %struct.C* %1, i32 0, i32 0
+>store i8 1, i8* %2, align 1
+>%3 = getelementptr inbounds %struct.C, %struct.C* %1, i32 0, i32 1
+>store i64 2, i64* %3, align 8
 
 **Анализ результата:**
 - Clang также не добавляет явные байты выравнивания в определение типа (`%struct.C = type { i8, i64, i64 }`)
@@ -196,9 +196,9 @@ END Test.
 tinylang/build/tools/driver/tinylang array_expr.mod --emit-llvm
 ```
 
-**Ожидаемый результат (ошибка):**
-tinylang: /home/user/.../CGModule.cpp:61: 
-assert(llvm::cast<IntegerLiteral>(Nums) && "Expected an integer literal") failed.
+>**Ожидаемый результат (ошибка):**
+>tinylang: /home/user/.../CGModule.cpp:61: 
+>assert(llvm::cast<IntegerLiteral>(Nums) && "Expected an integer literal") failed.
 
 **Анализ причины:**
 - Парсер (Parser.cpp, строки 213-221) успешно разбирает выражения в квадратных скобках
