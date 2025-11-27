@@ -1,0 +1,4 @@
+enter|main|1562637|0x7ffefbe6bb20
+call|getpid|1597262
+call|getpid|1608383
+exit|main|1612922|0x7ffefbe6bb20

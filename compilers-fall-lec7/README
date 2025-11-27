@@ -1,0 +1,56 @@
+Chapter 9. JIT Compilation
+==========================
+
+* LLVM core libraries: ExecutionEngine component -- compilation and execution of intermediate representation (IR) code in memory
+* Just-In-Iime (JIT) compilers -- dynamic code generation from IR and execution in memory, no object code on secondary storage
+
+* Pros: we know input data of application
+* Cons: overhead for dynamic compilation
+
+* Ahead-of-Time (AOT) compiler
+  -- compiles (code generation) whole application (all source files)
+  -- application run after code generation
+
+* AOT compiler
+* AOT compiler from source language to virtual machine
+  (Virtual ISA) + JIT from VISA to target architecture
+* Expression evaluation:
+* SQL expressions
+
+* How we can use AOT compiler like a JIT?
+  -- Compile app using AOT and store all object files in memory
+  -- Resolver all addresses in object files (linker + loader)
+  -- Call main()
+
+LLVM JIT API
+============
+
+* MCJIT [deprecated]
+* The latest LLVM JIT API: On-Request Compilation (ORC) engine // like ELF, DWARF, ...
+  -- extends the idea of using the static compiler and a dynamic linker on the in-memory object file
+  -- lazy compilation (minimize startup latency)
+
+* LLVM lli -- directly executes programs in LLVM bitcode format, executes it using a just-in-time compiler or an interpreter
+  https://llvm.org/docs/CommandGuide/lli.html
+
+Implementing our own JIT compiler with LLJIT (ORC)
+==================================================
+* ExecutionSession class represents a running JIT program
+* JITDylib -- symbol table that maps symbol names to addresses
+* LLJIT class
+
+Expression evaluation (JIT) -- example
+======================================
+* Calculator:
+> def f(x) = x * 2
+> f(3)
+> 6
+
+Building a JIT compiler class from scratch
+==========================================
+-- custom lli
+
+Lab assignment
+==============
+
+Port 02-jit to llvm 22

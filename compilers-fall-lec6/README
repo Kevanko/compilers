@@ -1,0 +1,68 @@
+Задание I
+=========
+
+1. Прочитать главу 7 (Nacke2024)
+
+2. Собрать и изучить исходный код прохода (pass) PPProfiler.
+   Найти файл PPProfiler.so -- собранная динамическая библиотека с проходом.
+
+3.1. Набрать код примера proc.c
+
+```
+#include <stdio.h>
+
+int main(int argc, char **argv)
+{
+    printf("Hello\n");
+    return 0;
+}
+```
+
+3.2. Построить при помощи clang файл prog.ll (LLVM IR)
+
+clang -S -emit-llvm -O1 prog.c
+
+3.3. Запустить opt с выполнением прохода из PPProfiler.so для примера prog.ll
+
+opt --load-pass-plugin=./PPProfiler.so \
+    --passes="ppprofiler" --stats prog.ll -o prog_instr.bc
+
+# prog_instr.bc -- оптимизированный код (трансформированный) после выполнения проходов,
+# bc-файл (bit-code) -- LLVM IR в бинарном формате
+
+3.4. Убедиться, что prog_instr.bc содержит трансформации прохода PPProfiler (__ppp_enter, __ppp_exit):
+
+llvm-dis ./prog_instr.bc
+
+cat prog_inst.ll
+
+```
+define dso_local noundef i32 @main(i32 noundef %0, ptr nocapture noundef readnone %1) local_unnamed_addr #0 {
+  call void @__ppp_enter(ptr @0)
+  %3 = tail call i32 @puts(ptr nonnull dereferenceable(1) @str)
+  call void @__ppp_exit(ptr @0)
+  ret i32 0
+}
+```
+
+3.5. Подготовить файл runtime.c (см. главу 7)
+
+3.6. Собрать prog_instr.bc c runtime.c:
+
+clang prog_instr.bc runtime.c -o prog
+
+3.7. Запустить prog и вывести на экран созданный файл ppprofiler.csv
+     -- лог вызова функций, который построил наш PPProfiler и runtime.c
+
+cat ppprofile.csv
+```
+enter|main|1263813|0x7ffd38caeac0
+exit|main|1295634|0x7ffd38caeac0
+```
+
+Блок заданий II
+===============
+
+4. Реализовать версию PPProfiler для регистрации входов и выходов из функций с двумя аргументами.
+
+5. Реализовать версию CallProfiler для регистрации вызовов функции с заданным именем (например, getpid()).
