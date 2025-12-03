@@ -1,0 +1,8 @@
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build/CMakeFiles/intrinsics_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build/CMakeFiles/vt_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build/CMakeFiles/omp_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build/CMakeFiles/acc_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build/CMakeFiles/target_parser_gen.dir
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build/CMakeFiles/JIT.dir
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build/CMakeFiles/edit_cache.dir
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build/CMakeFiles/rebuild_cache.dir

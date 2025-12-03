@@ -93,10 +93,17 @@ public:
   createObjectLinkingLayer(
       llvm::orc::ExecutionSession &ES,
       llvm::orc::JITTargetMachineBuilder &JTMB) {
-    auto GetMemoryManager = []() {
+    // New signature: receive a reference to the memory buffer and return memory manager
+    auto GetMemoryManager = [](const llvm::MemoryBuffer & /*ObjBuffer*/) 
+        -> std::unique_ptr<llvm::RuntimeDyld::MemoryManager> {
       return std::make_unique<
-          llvm::SectionMemoryManager>();
+        llvm::SectionMemoryManager>();
     };
+    // Old signature:
+    // auto GetMemoryManager = []() {
+    //   return std::make_unique<
+    //       llvm::SectionMemoryManager>();
+    // };
     auto OLLayer = std::make_unique<
         llvm::orc::RTDyldObjectLinkingLayer>(
         ES, GetMemoryManager);

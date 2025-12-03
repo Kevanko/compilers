@@ -1,0 +1,72 @@
+llvm-config --version
+22.0.0git
+nm@nm-Aspire-AL15-42P:~/Study/compilers/compilers-fall-lec7$ mkdir -p src/02-jit/build
+cd src/02-jit/build
+cmake ..
+make 2>&1 | tee build.log
+-- The C compiler identification is GNU 13.3.0
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found ZLIB: /usr/lib/x86_64-linux-gnu/libz.so (found version "1.3")  
+-- Configuring done (0.4s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/build
+[ 50%] Building CXX object CMakeFiles/JIT.dir/JIT.cpp.o
+In file included from /usr/include/c++/13/memory:78,
+                 from /home/nm/opt/llvm/include/llvm/ADT/STLExtras.h:37,
+                 from /home/nm/opt/llvm/include/llvm/ADT/DenseMap.h:20,
+                 from /home/nm/opt/llvm/include/llvm/Analysis/AliasAnalysis.h:40,
+                 from /home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/JIT.h:5,
+                 from /home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/JIT.cpp:1:
+/usr/include/c++/13/bits/unique_ptr.h: In instantiation of ‘std::__detail::__unique_ptr_t<_Tp> std::make_unique(_Args&& ...) [with _Tp = llvm::orc::RTDyldObjectLinkingLayer; _Args = {llvm::orc::ExecutionSession&, JIT::createObjectLinkingLayer(llvm::orc::ExecutionSession&, llvm::orc::JITTargetMachineBuilder&)::<lambda()>&}; __detail::__unique_ptr_t<_Tp> = __detail::__unique_ptr_t<llvm::orc::RTDyldObjectLinkingLayer>]’:
+/home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/JIT.h:101:45:   required from here
+/usr/include/c++/13/bits/unique_ptr.h:1070:30: error: no matching function for call to ‘llvm::orc::RTDyldObjectLinkingLayer::RTDyldObjectLinkingLayer(llvm::orc::ExecutionSession&, JIT::createObjectLinkingLayer(llvm::orc::ExecutionSession&, llvm::orc::JITTargetMachineBuilder&)::<lambda()>&)’
+ 1070 |     { return unique_ptr<_Tp>(new _Tp(std::forward<_Args>(__args)...)); }
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/nm/Study/compilers/compilers-fall-lec7/src/02-jit/JIT.h:14:
+/home/nm/opt/llvm/include/llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h:58:3: note: candidate: ‘llvm::orc::RTDyldObjectLinkingLayer::RTDyldObjectLinkingLayer(llvm::orc::ExecutionSession&, GetMemoryManagerFunction)’
+   58 |   RTDyldObjectLinkingLayer(ExecutionSession &ES,
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~
+/home/nm/opt/llvm/include/llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h:59:53: note:   no known conversion for argument 2 from ‘JIT::createObjectLinkingLayer(llvm::orc::ExecutionSession&, llvm::orc::JITTargetMachineBuilder&)::<lambda()>’ to ‘llvm::orc::RTDyldObjectLinkingLayer::GetMemoryManagerFunction’ {aka ‘llvm::unique_function<std::unique_ptr<llvm::RuntimeDyld::MemoryManager>(const llvm::MemoryBuffer&)>’}
+   59 |                            GetMemoryManagerFunction GetMemoryManager);
+      |                            ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+make[2]: *** [CMakeFiles/JIT.dir/build.make:76: CMakeFiles/JIT.dir/JIT.cpp.o] Ошибка 1
+make[1]: *** [CMakeFiles/Makefile2:218: CMakeFiles/JIT.dir/all] Ошибка 2
+make: *** [Makefile:91: all] Ошибка 2
+nm@nm-Aspire-AL15-42P:~/Study/compilers/compilers-fall-lec7/src/02-jit/build$ 
+
+
+
+
+
+
+
+
+Ошибка показывает, что конструктор llvm::orc::RTDyldObjectLinkingLayer в LLVM 22 ожидает функцию с сигнатурой типа
+std::unique_ptr<llvm::RuntimeDyld::MemoryManager>(const llvm::MemoryBuffer &)
+
+а в коде мы передаем лямбду без аргументов:
+auto GetMemoryManager = []() {
+  return std::make_unique<llvm::SectionMemoryManager>();
+  
+};
+
+Из-за этого компилятор не может подобрать перегрузку — и падает в момент std::make_unique<RTDyldObjectLinkingLayer>(ES, GetMemoryManager).
+
+
+
+Нужно изменить лямбду GetMemoryManager, чтобы она принимала аргумент (тот самый const llvm::MemoryBuffer & или llvm::MemoryBufferRef) и 
+возвращала std::unique_ptr<RuntimeDyld::MemoryManager>, например SectionMemoryManager. Самый простой и обычно рабочий вариант - 
+- принимать const llvm::MemoryBuffer &:
+createObjectLinkingLayer
+GetMemoryManager
+
